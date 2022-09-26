@@ -23,7 +23,7 @@ class mssqlConnector(SQLConnector):
         Args:
             config: The configuration for the connector.
         """
-        return f"mssql+pyodbc://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}?driver=ODBC+Driver+17+for+SQL+Server&schema={config['schema']}"
+        return f"mssql+pymssql://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}"
 
 
 class mssqlSink(SQLSink):
