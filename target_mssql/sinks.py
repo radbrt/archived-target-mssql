@@ -64,3 +64,38 @@ class mssqlSink(SQLSink):
     """mssql target sink class."""
 
     connector_class = mssqlConnector
+
+    def bulk_insert_records(
+        self,
+        full_table_name: str,
+        schema: dict,
+        records: Iterable[Dict[str, Any]],
+    ) -> Optional[int]:
+        """Bulk insert records to an existing destination table.
+        The default implementation uses a generic SQLAlchemy bulk insert operation.
+        This method may optionally be overridden by developers in order to provide
+        faster, native bulk uploads.
+        Args:
+            full_table_name: the target table name.
+            schema: the JSON schema for the new table, to be used when inferring column
+                names.
+            records: the input records.
+        Returns:
+            True if table exists, False if not, None if unsure or undetectable.
+        """
+        insert_sql = self.generate_insert_statement(
+            full_table_name,
+            schema,
+        )
+        if isinstance(insert_sql, str):
+            insert_sql = sqlalchemy.text(insert_sql)
+
+        self.logger.info("Inserting with SQL: %s", insert_sql)
+        self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
+        self.connector.connection.execute(insert_sql, records)
+        self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
+        
+        if isinstance(records, list):
+            return len(records)  # If list, we can quickly return record count.
+
+        return None  # Unknown record count.
