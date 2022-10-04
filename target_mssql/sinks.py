@@ -130,10 +130,10 @@ class mssqlConnector(SQLConnector):
         for property_name, property_jsonschema in properties.items():
             is_primary_key = property_name in primary_keys
 
-            if is_primary_key and property_jsonschema.get("type") == "string":
-                columntype = sqlalchemy.sql.sqltypes.VARCHAR(255)
-            else:
-                columntype = self.to_sql_type(property_jsonschema)
+            columntype = self.to_sql_type(property_jsonschema)
+
+            if isinstance(columntype, sqlalchemy.types.VARCHAR) and is_primary_key:
+                columntype = sqlalchemy.types.VARCHAR(255)
 
             columns.append(
                 sqlalchemy.Column(
