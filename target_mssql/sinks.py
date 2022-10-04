@@ -17,6 +17,40 @@ class mssqlConnector(SQLConnector):
     allow_merge_upsert: bool = False  # Whether MERGE UPSERT is supported.
     allow_temp_tables: bool = True  # Whether temp tables are supported.
 
+
+    def create_table_with_records(
+        self,
+        full_table_name: Optional[str],
+        schema: dict,
+        records: Iterable[Dict[str, Any]],
+        primary_keys: Optional[List[str]] = None,
+        partition_keys: Optional[List[str]] = None,
+        as_temp_table: bool = False,
+    ) -> None:
+        """Create an empty table.
+        Args:
+            full_table_name: the target table name.
+            schema: the JSON schema for the new table.
+            records: records to load.
+            primary_keys: list of key properties.
+            partition_keys: list of partition keys.
+            as_temp_table: True to create a temp table.
+        """
+        full_table_name = full_table_name or self.full_table_name
+        if primary_keys is None:
+            primary_keys = self.key_properties
+        partition_keys = partition_keys or None
+        self.connector.prepare_table(
+            full_table_name=full_table_name,
+            primary_keys=primary_keys,
+            schema=schema,
+            as_temp_table=as_temp_table,
+        )
+        self.bulk_insert_records(
+            full_table_name=full_table_name, schema=schema, records=records
+        )
+
+
     def get_sqlalchemy_url(self, config: dict) -> str:
         """Generates a SQLAlchemy URL for mssql.
 
@@ -60,6 +94,59 @@ class mssqlConnector(SQLConnector):
             )
         )
 
+    def create_empty_table(
+        self,
+        full_table_name: str,
+        schema: dict,
+        primary_keys: list[str] | None = None,
+        partition_keys: list[str] | None = None,
+        as_temp_table: bool = False,
+    ) -> None:
+        """Create an empty target table.
+        Args:
+            full_table_name: the target table name.
+            schema: the JSON schema for the new table.
+            primary_keys: list of key properties.
+            partition_keys: list of partition keys.
+            as_temp_table: True to create a temp table.
+        Raises:
+            NotImplementedError: if temp tables are unsupported and as_temp_table=True.
+            RuntimeError: if a variant schema is passed with no properties defined.
+        """
+        if as_temp_table:
+            raise NotImplementedError("Temporary tables are not supported.")
+
+        _ = partition_keys  # Not supported in generic implementation.
+
+        meta = sqlalchemy.MetaData()
+        columns: list[sqlalchemy.Column] = []
+        primary_keys = primary_keys or []
+        try:
+            properties: dict = schema["properties"]
+        except KeyError:
+            raise RuntimeError(
+                f"Schema for '{full_table_name}' does not define properties: {schema}"
+            )
+        for property_name, property_jsonschema in properties.items():
+            is_primary_key = property_name in primary_keys
+
+            if is_primary_key and property_jsonschema.get("type") == "string":
+                columntype = sqlalchemy.sql.sqltypes.VARCHAR(255)
+            else:
+                columntype = self.to_sql_type(property_jsonschema)
+
+            columns.append(
+                sqlalchemy.Column(
+                    property_name,
+                    columntype,
+                    primary_key=is_primary_key,
+                )
+            )
+
+        _ = sqlalchemy.Table(full_table_name, meta, *columns)
+        meta.create_all(self._engine)
+
+
 class mssqlSink(SQLSink):
     """mssql target sink class."""
 
@@ -96,7 +183,7 @@ class mssqlSink(SQLSink):
         self.connector.connection.execute(insert_sql, records)
         self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
         self.logger.info(f"Disabled identity insert on { full_table_name }")
-        
+
         if isinstance(records, list):
             return len(records)  # If list, we can quickly return record count.
 
