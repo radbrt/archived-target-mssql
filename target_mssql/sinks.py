@@ -153,17 +153,27 @@ class mssqlConnector(SQLConnector):
                 f"Could not convert column '{full_table_name}.{column_name}' "
                 f"from '{current_type}' to '{compatible_sql_type}'."
             )
-
-        self.connection.execute(
-            sqlalchemy.DDL(
-                "ALTER TABLE %(table)s ALTER COLUMN %(col_name)s %(col_type)s",
-                {
-                    "table": full_table_name,
-                    "col_name": column_name,
-                    "col_type": compatible_sql_type,
-                },
+        try:
+            self.connection.execute(
+                f"""ALTER TABLE { str(full_table_name) } 
+                ALTER COLUMN { str(column_name) } { str(compatible_sql_type) }"""
             )
-        )
+        except Exception as e:
+            raise RuntimeError(
+                f"Could not convert column '{full_table_name}.{column_name}' "
+                f"from '{current_type}' to '{compatible_sql_type}'."
+            ) from e
+
+        # self.connection.execute(
+        #     sqlalchemy.DDL(
+        #         "ALTER TABLE %(table)s ALTER COLUMN %(col_name)s %(col_type)s",
+        #         {
+        #             "table": full_table_name,
+        #             "col_name": column_name,
+        #             "col_type": compatible_sql_type,
+        #         },
+        #     )
+        # )
 
 
     def _create_empty_column(
@@ -190,18 +200,29 @@ class mssqlConnector(SQLConnector):
             )
         )
 
-        tmp_connection = self.create_sqlalchemy_connection()
-
-        ddl = sqlalchemy.DDL(
-                "ALTER TABLE %(table)s ADD %(create_column)s",
-                {
-                    "table": full_table_name,
-                    "create_column": create_column_clause,
-                },
+        try:
+            self.connection.execute(
+                f"""ALTER TABLE { str(full_table_name) } 
+                ADD { str(create_column_clause) } """
             )
-        print(ddl)
 
-        ddl.execute(tmp_connection)
+        except Exception as e:
+            raise RuntimeError(
+                f"Could not create column '{create_column_clause}' "
+                f"on table '{full_table_name}'."
+            ) from e
+
+
+        # ddl = sqlalchemy.DDL(
+        #         "ALTER TABLE %(table)s ADD %(create_column)s",
+        #         {
+        #             "table": full_table_name,
+        #             "create_column": create_column_clause,
+        #         },
+        #     )
+        # print(ddl)
+
+        # ddl.execute(self.connection)
 
         # cur = self.connection.cursor()
         # cur.execute(ddl)

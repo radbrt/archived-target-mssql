@@ -7,58 +7,21 @@ default_environment: prod
 send_anonymous_usage_stats: true
 project_id: target-mssql
 plugins:
-  extractors:
-  - name: tap-postgres
-    config:
-      host: localhost
-      port: 5432
-      user: postgres
-      password: SuperS3cret!
-      dbname: postgres
-      default_replication_method: LOG_BASED
-  - name: tap-s3-csv
-    variant: transferwise
-    pip_url: pipelinewise-tap-s3-csv
-    config:
-      start_date: '2010-01-01'
-      bucket: s3://radallelse
-      tables:
-      - table_name: test
-        search_prefix: payroll/
-        key_properties: []
-        replication_method: INCREMENTAL
-  - name: tap-feed
-    variant: jawats
-    pip_url: tap-feed
-    config:
-      feed_urls:
-      - http://feeds.feedburner.com/PythonSoftwareFoundationNews
-      feed_fields:
-      - title
-      - link
-      feed_entry_fields:
-      - title
-      - link
-      feed_entry_replication_key: published
-      start_date: 2022-01-01
+  extractors: []
   loaders:
-  - name: target-mssql
-    namespace: target_mssql
+  - name: "target-mssql"
+    namespace: "target_mssql"
     pip_url: -e .
     capabilities:
     - state
     - catalog
     - discover
+    config:
+      start_date: '2010-01-01T00:00:00Z'
     settings:
+    # TODO: To configure using Meltano, declare settings and their types here:
     - name: username
     - name: password
       kind: password
     - name: start_date
       value: '2010-01-01T00:00:00Z'
-    config:
-      start_date: '2010-01-01T00:00:00Z'
-      host: localhost
-      port: 1433
-      user: sa
-      database: master
-      password: SuperS3cret!

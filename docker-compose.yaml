@@ -15,4 +15,10 @@ services:
       POSTGRES_PASSWORD: SuperS3cret!
     ports:
       - 5432:5432
+  pgsink:
+    image: postgres:13
+    environment:
+      POSTGRES_PASSWORD: SuperS3cret!
+    ports:
+      - 5431:5432
   
