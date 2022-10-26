@@ -240,7 +240,6 @@ class mssqlConnector(SQLConnector):
 
 
 
-    @staticmethod
     def to_sql_type(self, jsonschema_type: dict) -> sqlalchemy.types.TypeEngine:
         """Convert JSON Schema type to a SQL type.
         Args:
