@@ -259,7 +259,7 @@ class mssqlConnector(SQLConnector):
                     return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.DATE())
 
             maxlength = jsonschema_type.get("maxLength")
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR(maxlength))
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(maxlength))
 
         if self._jsonschema_type_check(jsonschema_type, ("integer",)):
             return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.INTEGER())
@@ -269,12 +269,12 @@ class mssqlConnector(SQLConnector):
             return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.BOOLEAN())
 
         if self._jsonschema_type_check(jsonschema_type, ("object",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR())
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR())
 
         if self._jsonschema_type_check(jsonschema_type, ("array",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR())
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR())
 
-        return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR())
+        return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR())
 
 
 
