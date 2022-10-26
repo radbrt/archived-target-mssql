@@ -216,7 +216,8 @@ class mssqlConnector(SQLConnector):
                 f"on table '{full_table_name}'."
             ) from e
 
-    def _jsonschema_type_check(jsonschema_type: dict, type_check: tuple[str]) -> bool:
+
+    def _jsonschema_type_check(self, jsonschema_type: dict, type_check: tuple[str]) -> bool:
         """Return True if the jsonschema_type supports the provided type.
         Args:
             jsonschema_type: The type dict.
