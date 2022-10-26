@@ -5,10 +5,7 @@ from __future__ import annotations
 from singer_sdk.sinks import SQLConnector, SQLSink
 from typing import Any, Generic, Mapping, TypeVar, Union, cast
 from singer_sdk.helpers._typing import (
-    JSONSCHEMA_ANNOTATION_SECRET,
-    JSONSCHEMA_ANNOTATION_WRITEONLY,
-    append_type,
-    get_datelike_property_type,
+    get_datelike_property_type
 )
 import sqlalchemy
 
