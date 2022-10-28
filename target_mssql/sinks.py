@@ -20,7 +20,7 @@ class mssqlConnector(SQLConnector):
     allow_column_alter: bool = True  # Whether altering column types is supported.
     allow_merge_upsert: bool = True  # Whether MERGE UPSERT is supported.
     allow_temp_tables: bool = True  # Whether temp tables are supported.
-
+ 
 
     def create_table_with_records(
         self,
@@ -241,40 +241,40 @@ class mssqlConnector(SQLConnector):
 
 
 
-    def to_sql_type(self, jsonschema_type: dict) -> sqlalchemy.types.TypeEngine:
-        """Convert JSON Schema type to a SQL type.
-        Args:
-            jsonschema_type: The JSON Schema object.
-        Returns:
-            The SQL type.
-        """
-        if self._jsonschema_type_check(jsonschema_type, ("string",)):
-            datelike_type = get_datelike_property_type(jsonschema_type)
-            if datelike_type:
-                if datelike_type == "date-time":
-                    return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.DATETIME())
-                if datelike_type in "time":
-                    return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.TIME())
-                if datelike_type == "date":
-                    return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.DATE())
+    # def to_sql_type(self, jsonschema_type: dict) -> sqlalchemy.types.TypeEngine:
+    #     """Convert JSON Schema type to a SQL type.
+    #     Args:
+    #         jsonschema_type: The JSON Schema object.
+    #     Returns:
+    #         The SQL type.
+    #     """
+    #     if self._jsonschema_type_check(jsonschema_type, ("string",)):
+    #         datelike_type = get_datelike_property_type(jsonschema_type)
+    #         if datelike_type:
+    #             if datelike_type == "date-time":
+    #                 return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.DATETIME())
+    #             if datelike_type in "time":
+    #                 return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.TIME())
+    #             if datelike_type == "date":
+    #                 return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.DATE())
 
-            maxlength = jsonschema_type.get("maxLength")
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(maxlength, collation='SQL_Latin1_General_CP1_CI_AS'))
+    #         maxlength = jsonschema_type.get("maxLength")
+    #         return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(maxlength, collation='SQL_Latin1_General_CP1_CI_AS'))
 
-        if self._jsonschema_type_check(jsonschema_type, ("integer",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.INTEGER())
-        if self._jsonschema_type_check(jsonschema_type, ("number",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NUMERIC(22, 16))
-        if self._jsonschema_type_check(jsonschema_type, ("boolean",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.BOOLEAN())
+    #     if self._jsonschema_type_check(jsonschema_type, ("integer",)):
+    #         return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.INTEGER())
+    #     if self._jsonschema_type_check(jsonschema_type, ("number",)):
+    #         return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NUMERIC(22, 16))
+    #     if self._jsonschema_type_check(jsonschema_type, ("boolean",)):
+    #         return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.BOOLEAN())
 
-        if self._jsonschema_type_check(jsonschema_type, ("object",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
+    #     if self._jsonschema_type_check(jsonschema_type, ("object",)):
+    #         return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
 
-        if self._jsonschema_type_check(jsonschema_type, ("array",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(245,  collation='SQL_Latin1_General_CP1_CI_AS'))
+    #     if self._jsonschema_type_check(jsonschema_type, ("array",)):
+    #         return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(245,  collation='SQL_Latin1_General_CP1_CI_AS'))
 
-        return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
+    #     return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
 
 
 
