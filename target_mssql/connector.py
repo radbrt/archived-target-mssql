@@ -286,13 +286,21 @@ class mssqlConnector(SQLConnector):
 
     def create_temp_table_from_table(self, from_table_name):
         """Temp table from another table."""
-        ddl = sqlalchemy.DDL(
-            """
+
+        # ddl = sqlalchemy.DDL(
+        #     """
+        #     SELECT TOP 0 *
+        #     into #%(from_table_name)s
+        #     FROM %(from_table_name)s
+        #     """,
+        #     {"from_table_name": from_table_name},
+        # )
+
+        ddl = f"""
             SELECT TOP 0 *
-            into #%(from_table_name)s
-            FROM %(from_table_name)s
-            """,
-            {"from_table_name": from_table_name},
-        )
+            into #{from_table_name}
+            FROM {from_table_name}
+        """
+
         self.connection.execute(ddl)
 
