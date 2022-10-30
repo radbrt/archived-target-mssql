@@ -130,8 +130,10 @@ class mssqlSink(SQLSink):
                     {", ".join([f"target.{key} = temp.{key}" for key in schema["properties"].keys() if key not in join_keys])}
             WHEN NOT MATCHED THEN
                 INSERT ({", ".join(schema["properties"].keys())})
-                VALUES ({", ".join([f"temp.{key}" for key in schema["properties"].keys()])});
+                VALUES ({", ".join([f"temp.{key}" for key in schema["properties"].keys()])})
         """
 
         self.connection.execute(merge_sql)
         self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } OFF")
+        self.connection.execute(f"DROP TABLE {from_table_name}")
+        self.connection.execute(f"COMMIT")
