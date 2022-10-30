@@ -120,7 +120,7 @@ class mssqlSink(SQLSink):
         join_condition = " and ".join(
             [f"temp.{key} = target.{key}" for key in join_keys]
         )
-
+        self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } ON")
         merge_sql = f"""
             MERGE INTO {to_table_name} AS target
             USING {from_table_name} AS temp
@@ -134,3 +134,4 @@ class mssqlSink(SQLSink):
         """
 
         self.connection.execute(merge_sql)
+        self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } OFF")
