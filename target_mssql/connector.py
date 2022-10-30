@@ -298,7 +298,7 @@ class mssqlConnector(SQLConnector):
 
         ddl = f"""
             SELECT TOP 0 *
-            into #{from_table_name}
+            into {from_table_name}_tmp
             FROM {from_table_name}
         """
 

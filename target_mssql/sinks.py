@@ -81,18 +81,18 @@ class mssqlSink(SQLSink):
         )
         # Insert into temp table
         self.bulk_insert_records(
-            full_table_name=f"#{self.full_table_name}",
+            full_table_name=f"{self.full_table_name}_tmp",
             schema=self.schema,
             records=context["records"],
         )
         # Merge data from Temp table to main table
         self.merge_upsert_from_table(
-            from_table_name=f"#{self.full_table_name}",
+            from_table_name=f"{self.full_table_name}_tmp",
             to_table_name=f"{self.full_table_name}",
             schema=self.schema,
             join_keys=self.key_properties,
         )
-        self.connector.truncate_table(self.temp_table_name)
+        # self.connector.truncate_table(self.temp_table_name)
 
 
     def merge_upsert_from_table(
