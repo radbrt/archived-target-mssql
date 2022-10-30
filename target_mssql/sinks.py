@@ -90,10 +90,33 @@ class mssqlSink(SQLSink):
             from_table_name=f"{self.full_table_name}_tmp",
             to_table_name=f"{self.full_table_name}",
             schema=self.schema,
-            join_keys=self.key_properties,
+            join_keys=self.key_properties or '_sdc_hash',
         )
         # self.connector.truncate_table(self.temp_table_name)
 
+    def hash_record(self, record: dict) -> str:
+        """Return hash of the values in the record.
+        Args:
+            record: Individual record in the stream.
+        Returns:
+            A hash of the record.
+        """
+        return hash(tuple(record.values()))
+
+
+    def preprocess_record(self, record: dict, context: dict) -> dict:
+        """Process incoming record and return a modified result.
+        Args:
+            record: Individual record in the stream.
+            context: Stream partition or context dictionary.
+        Returns:
+            A new, processed record.
+        """
+        if not context.get("key_properties"):
+            hash_row = self.hash_record(record, context["key_properties"])
+            record["_sdc_hash"] = hash_row
+        
+        return record
 
     def merge_upsert_from_table(
         self,
