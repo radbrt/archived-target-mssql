@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from singer_sdk.sinks import SQLConnector, SQLSink
+from typing import Any, Generic, Mapping, TypeVar, Union, cast
+from singer_sdk.helpers._typing import (
+    get_datelike_property_type
+)
 import sqlalchemy
 
 class mssqlConnector(SQLConnector):
@@ -16,7 +20,7 @@ class mssqlConnector(SQLConnector):
     allow_column_alter: bool = True  # Whether altering column types is supported.
     allow_merge_upsert: bool = True  # Whether MERGE UPSERT is supported.
     allow_temp_tables: bool = True  # Whether temp tables are supported.
-
+ 
 
     def create_table_with_records(
         self,
@@ -213,23 +217,76 @@ class mssqlConnector(SQLConnector):
             ) from e
 
 
-        # ddl = sqlalchemy.DDL(
-        #         "ALTER TABLE %(table)s ADD %(create_column)s",
-        #         {
-        #             "table": full_table_name,
-        #             "create_column": create_column_clause,
-        #         },
-        #     )
-        # print(ddl)
+    def _jsonschema_type_check(self, jsonschema_type: dict, type_check: tuple[str]) -> bool:
+        """Return True if the jsonschema_type supports the provided type.
+        Args:
+            jsonschema_type: The type dict.
+            type_check: A tuple of type strings to look for.
+        Returns:
+            True if the schema suports the type.
+        """
+        if "type" in jsonschema_type:
+            if isinstance(jsonschema_type["type"], (list, tuple)):
+                for t in jsonschema_type["type"]:
+                    if t in type_check:
+                        return True
+            else:
+                if jsonschema_type.get("type") in type_check:
+                    return True
 
-        # ddl.execute(self.connection)
+        if any(t in type_check for t in jsonschema_type.get("anyOf", ())):
+            return True
 
-        # cur = self.connection.cursor()
-        # cur.execute(ddl)
-        # self.connection.execute(
-        #     ddl
-        # )
+        return False
 
+
+
+    def to_sql_type(self, jsonschema_type: dict) -> sqlalchemy.types.TypeEngine:
+        """Convert JSON Schema type to a SQL type.
+        Args:
+            jsonschema_type: The JSON Schema object.
+        Returns:
+            The SQL type.
+        """
+        if self._jsonschema_type_check(jsonschema_type, ("string",)):
+            datelike_type = get_datelike_property_type(jsonschema_type)
+            if datelike_type:
+                if datelike_type == "date-time":
+                    return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.DATETIME())
+                if datelike_type in "time":
+                    return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.TIME())
+                if datelike_type == "date":
+                    return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.DATE())
+
+            maxlength = jsonschema_type.get("maxLength")
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(maxlength, collation='SQL_Latin1_General_CP1_CI_AS'))
+
+        if self._jsonschema_type_check(jsonschema_type, ("integer",)):
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.INTEGER())
+        if self._jsonschema_type_check(jsonschema_type, ("number",)):
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NUMERIC(22, 16))
+        if self._jsonschema_type_check(jsonschema_type, ("boolean",)):
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.BOOLEAN())
+
+        if self._jsonschema_type_check(jsonschema_type, ("object",)):
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
+
+        if self._jsonschema_type_check(jsonschema_type, ("array",)):
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(245,  collation='SQL_Latin1_General_CP1_CI_AS'))
+
+        return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
+
+    def create_temp_table_from_table(self, from_table_name, temp_table_name):
+        """Temp table from another table."""
+        ddl = sqlalchemy.DDL(
+            """
+            SELECT TOP 0 *
+            into %(temp_table_name)s
+            FROM %(from_table_name)s
+            """,
+            {"temp_table_name": temp_table_name, "from_table_name": from_table_name},
+        )
+        self.connection.execute(ddl)
 
 
 class mssqlSink(SQLSink):
