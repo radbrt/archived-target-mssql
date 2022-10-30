@@ -276,6 +276,17 @@ class mssqlConnector(SQLConnector):
 
         return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
 
+    def create_temp_table_from_table(self, from_table_name, temp_table_name):
+        """Temp table from another table."""
+        ddl = sqlalchemy.DDL(
+            """
+            SELECT TOP 0 *
+            into %(temp_table_name)s
+            FROM %(from_table_name)s
+            """,
+            {"temp_table_name": temp_table_name, "from_table_name": from_table_name},
+        )
+        self.connection.execute(ddl)
 
 
 class mssqlSink(SQLSink):
