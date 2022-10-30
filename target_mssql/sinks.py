@@ -69,10 +69,12 @@ class mssqlSink(SQLSink):
             context: Stream partition or context dictionary.
         """
         # First we need to be sure the main table is already created
+
+        primary_keys = context.get("key_properties", '_sdc_hash')
         self.connector.prepare_table(
             full_table_name=self.full_table_name,
             schema=self.schema,
-            primary_keys=self.key_properties,
+            primary_keys=primary_keys,
             as_temp_table=False,
         )
         # Create a temp table (Creates from the table above)
@@ -90,7 +92,7 @@ class mssqlSink(SQLSink):
             from_table_name=f"{self.full_table_name}_tmp",
             to_table_name=f"{self.full_table_name}",
             schema=self.schema,
-            join_keys=self.key_properties or '_sdc_hash',
+            join_keys=primary_keys,
         )
         # self.connector.truncate_table(self.temp_table_name)
 
