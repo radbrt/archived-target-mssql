@@ -115,7 +115,7 @@ class mssqlSink(SQLSink):
             A new, processed record.
         """
         if not context.get("key_properties"):
-            hash_row = self.hash_record(record, context["key_properties"])
+            hash_row = self.hash_record(record)
             record["_sdc_hash"] = hash_row
         
         return record
