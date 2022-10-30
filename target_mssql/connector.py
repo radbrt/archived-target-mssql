@@ -61,7 +61,16 @@ class mssqlConnector(SQLConnector):
         """
         #return f"mssql+pyodbc://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}?driver=ODBC+Driver+17+for+SQL+Server"
 
-        return f"mssql+pymssql://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}"
+        connection_url = sqlalchemy.engine.url.URL(
+            drivername="mssql+pymssql",
+            username=config["user"],
+            password=config["password"],
+            host=config["host"],
+            port=config["port"],
+            database=config["database"]
+        )
+        return str(connection_url)
+        # return f"mssql+pymssql://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}"
 
 
     def create_empty_table(
