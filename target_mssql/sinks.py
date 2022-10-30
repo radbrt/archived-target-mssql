@@ -50,10 +50,10 @@ class mssqlSink(SQLSink):
             insert_sql = sqlalchemy.text(insert_sql)
 
         self.logger.info("Inserting with SQL: %s", insert_sql)
-        # self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
+        self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
         # self.logger.info(f"Enabled identity insert on { full_table_name }")
         self.connector.connection.execute(insert_sql, records)
-        # self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
+        self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
         # self.logger.info(f"Disabled identity insert on { full_table_name }")
 
         if isinstance(records, list):
