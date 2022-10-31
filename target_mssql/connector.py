@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from singer_sdk.sinks import SQLConnector, SQLSink
+from sqlalchemy.dialects import mssql
 from typing import Any, Generic, Mapping, TypeVar, Union, cast
 from singer_sdk.helpers._typing import (
     get_datelike_property_type
@@ -273,7 +274,7 @@ class mssqlConnector(SQLConnector):
         if self._jsonschema_type_check(jsonschema_type, ("number",)):
             return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NUMERIC(22, 16))
         if self._jsonschema_type_check(jsonschema_type, ("boolean",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.BOOLEAN())
+            return cast(sqlalchemy.types.TypeEngine, mssql.VARCHAR())
 
         if self._jsonschema_type_check(jsonschema_type, ("object",)):
             return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
