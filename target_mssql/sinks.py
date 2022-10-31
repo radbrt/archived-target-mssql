@@ -6,6 +6,9 @@ from singer_sdk.sinks import SQLSink
 from typing import Any, Optional, List, Dict
 
 import sqlalchemy
+from sqlalchemy import Table, MetaData, exc, types, insert
+from sqlalchemy.dialects import mssql
+
 from target_mssql.connector import mssqlConnector
 
 
