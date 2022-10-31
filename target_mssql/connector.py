@@ -274,7 +274,7 @@ class mssqlConnector(SQLConnector):
         if self._jsonschema_type_check(jsonschema_type, ("number",)):
             return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NUMERIC(22, 16))
         if self._jsonschema_type_check(jsonschema_type, ("boolean",)):
-            return cast(sqlalchemy.types.TypeEngine, mssql.VARCHAR(1))
+            return cast(sqlalchemy.types.TypeEngine, mssql.VARCHAR(1, collation='SQL_Latin1_General_CP1_CI_AS'))
 
         if self._jsonschema_type_check(jsonschema_type, ("object",)):
             return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
