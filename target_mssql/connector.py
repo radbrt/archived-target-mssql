@@ -267,7 +267,7 @@ class mssqlConnector(SQLConnector):
                     return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.DATE())
 
             maxlength = jsonschema_type.get("maxLength")
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR(maxlength, collation="SQL_Latin1_General_CP1_CI_AS"))
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR(maxlength))
 
         if self._jsonschema_type_check(jsonschema_type, ("integer",)):
             return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.INTEGER())
@@ -277,12 +277,12 @@ class mssqlConnector(SQLConnector):
             return cast(sqlalchemy.types.TypeEngine, mssql.VARCHAR(1))
 
         if self._jsonschema_type_check(jsonschema_type, ("object",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR(255, collation="SQL_Latin1_General_CP1_CI_AS"))
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR())
 
         if self._jsonschema_type_check(jsonschema_type, ("array",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR(245, collation="SQL_Latin1_General_CP1_CI_AS"))
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR())
 
-        return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR(255, collation="SQL_Latin1_General_CP1_CI_AS"))
+        return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR())
 
 
     def create_temp_table_from_table(self, from_table_name):
