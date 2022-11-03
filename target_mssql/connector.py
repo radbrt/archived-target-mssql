@@ -16,7 +16,7 @@ class mssqlConnector(SQLConnector):
 
     allow_column_add: bool = True  # Whether ADD COLUMN is supported.
     allow_column_rename: bool = True  # Whether RENAME COLUMN is supported.
-    allow_column_alter: bool = False  # Whether altering column types is supported.
+    allow_column_alter: bool = True  # Whether altering column types is supported.
     allow_merge_upsert: bool = True  # Whether MERGE UPSERT is supported.
     allow_temp_tables: bool = True  # Whether temp tables are supported.
  
@@ -155,7 +155,7 @@ class mssqlConnector(SQLConnector):
         # calling merge_sql_types for assistnace
         compatible_sql_type = self.merge_sql_types([current_type, sql_type])
 
-        if str(compatible_sql_type) == str(current_type):
+        if str(compatible_sql_type).split(' ')[0] == str(current_type).split(' ')[0]:
             # Nothing to do
             return
 

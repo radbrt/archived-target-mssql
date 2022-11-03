@@ -56,6 +56,13 @@ class mssqlSink(SQLSink):
 
         columns = self.column_representation(schema)
 
+        meta = MetaData()
+        table = Table( full_table_name, meta, autoload=True, autoload_with=self.connector.connection.engine)
+        primary_key_list = [pk_column.name for pk_column in table.primary_key.columns.values()]
+        for primary_key in primary_key_list:
+            if primary_key in records[0]:
+                primary_key_present = True
+
         insert_records = []
         for record in records:
             insert_record = {}
@@ -63,13 +70,14 @@ class mssqlSink(SQLSink):
                 insert_record[column.name] = record.get(column.name)
             insert_records.append(insert_record)
 
-        # self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
-        # self.logger.info(f"Enabled identity insert on { full_table_name }")
+        if primary_key_present:
+            self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
 
         self.connector.connection.execute(insert, insert_records)
 
-        # self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
-        # self.logger.info(f"Disabled identity insert on { full_table_name }")
+        if primary_key_present:
+            self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
+
 
         if isinstance(records, list):
             return len(records)  # If list, we can quickly return record count.
