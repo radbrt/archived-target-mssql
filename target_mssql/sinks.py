@@ -6,7 +6,7 @@ from singer_sdk.sinks import SQLSink
 from typing import Any, Optional, List, Dict
 
 import sqlalchemy
-from sqlalchemy import Table, MetaData, exc, types, insert
+from sqlalchemy import Table, MetaData, exc, types, insert, Column
 from sqlalchemy.dialects import mssql
 
 from target_mssql.connector import mssqlConnector
@@ -54,10 +54,19 @@ class mssqlSink(SQLSink):
 
         self.logger.info("Inserting with SQL: %s", insert_sql)
 
+        columns = self.column_representation(schema)
+
+        insert_records = []
+        for record in records:
+            insert_record = {}
+            for column in columns:
+                insert_record[column.name] = record.get(column.name)
+            insert_records.append(insert_record)
+
         # self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
         # self.logger.info(f"Enabled identity insert on { full_table_name }")
 
-        self.connector.connection.execute(insert_sql, records)
+        self.connector.connection.execute(insert, insert_records)
 
         # self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
         # self.logger.info(f"Disabled identity insert on { full_table_name }")
@@ -66,6 +75,22 @@ class mssqlSink(SQLSink):
             return len(records)  # If list, we can quickly return record count.
 
         return None  # Unknown record count.
+
+    def column_representation(
+        self,
+        schema: dict,
+    ) -> List[Column]:
+        """Returns a sql alchemy table representation for the current schema."""
+        columns: list[Column] = []
+        conformed_properties = self.conform_schema(schema)["properties"]
+        for property_name, property_jsonschema in conformed_properties.items():
+            columns.append(
+                Column(
+                    property_name,
+                    self.connector.to_sql_type(property_jsonschema),
+                )
+            )
+        return columns
 
     def process_batch(self, context: dict) -> None:
         """Process a batch with the given batch context.
