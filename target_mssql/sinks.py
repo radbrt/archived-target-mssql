@@ -201,7 +201,9 @@ class mssqlSink(SQLSink):
                 VALUES ({", ".join([f"temp.{key}" for key in schema["properties"].keys()])});
         """
 
+        self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } ON")
         self.connection.execute(merge_sql)
+        self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } OFF")
         # self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } OFF")
         self.connection.execute(f"DROP TABLE {from_table_name}")
         self.connection.execute(f"COMMIT")
