@@ -74,12 +74,14 @@ class mssqlSink(SQLSink):
 
         columns = self.column_representation(schema)
 
-        meta = MetaData()
-        table = Table( full_table_name, meta, autoload=True, autoload_with=self.connector.connection.engine)
-        primary_key_list = [pk_column.name for pk_column in table.primary_key.columns.values()]
-        for primary_key in primary_key_list:
-            if primary_key in records[0]:
-                primary_key_present = True
+        primary_key_present = True
+
+        # meta = MetaData()
+        # table = Table( full_table_name, meta, autoload=True, autoload_with=self.connector.connection.engine)
+        # primary_key_list = [pk_column.name for pk_column in table.primary_key.columns.values()]
+        # for primary_key in primary_key_list:
+        #     if primary_key in records[0]:
+        #         primary_key_present = True
 
         insert_records = []
         for record in records:
