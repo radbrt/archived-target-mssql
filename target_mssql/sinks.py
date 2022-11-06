@@ -27,6 +27,24 @@ class mssqlSink(SQLSink):
         return self._connector
 
 
+    @property
+    def schema_name(self) -> Optional[str]:
+        """Return the schema name or `None` if using names with no schema part.
+        Returns:
+            The target schema name.
+        """
+
+        # return 'dbo'
+        # parts = self.stream_name.split("-")
+        # if len(parts) in {2, 3}:
+        #     # Stream name is a two-part or three-part identifier.
+        #     # Use the second-to-last part as the schema name.
+        #     return self.conform_name(parts[-2], "schema")
+
+        # # Schema name not detected.
+        return None
+
+
     def bulk_insert_records(
         self,
         full_table_name: str,
