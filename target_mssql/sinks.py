@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from singer_sdk.sinks import SQLSink
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional, List, Dict, Iterable
 
 import sqlalchemy
 from sqlalchemy import Table, MetaData, exc, types, insert, Column
@@ -83,14 +83,18 @@ class mssqlSink(SQLSink):
 
         insert_records = []
         for record in records:
+            self.logger.info("Inserting record: %s", record)
             insert_record = {}
             for column in columns:
+                self.logger.info("processing column: %s", column)
                 insert_record[column.name] = record.get(column.name)
             insert_records.append(insert_record)
 
         if primary_key_present:
+            self.logger.info("Inserting with primary key, toggling identity")
             self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
 
+        self.logger.info("Finally reached the insert execute stage")
         self.connector.connection.execute(insert, insert_records)
 
         if primary_key_present:
