@@ -97,7 +97,7 @@ class mssqlSink(SQLSink):
             self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
 
         self.logger.info("Finally reached the insert execute stage")
-        self.connection.execute(insert, insert_records)
+        self.connection.execute(insert_sql, insert_records)
 
         if primary_key_present:
             self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
