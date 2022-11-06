@@ -97,7 +97,7 @@ class mssqlSink(SQLSink):
             self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
 
         self.logger.info("Finally reached the insert execute stage")
-        self.connector.connection.execute(insert, insert_records)
+        self.connection.execute(insert, insert_records)
 
         if primary_key_present:
             self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
@@ -132,6 +132,8 @@ class mssqlSink(SQLSink):
             context: Stream partition or context dictionary.
         """
         # First we need to be sure the main table is already created
+
+        self.logger.info("Preparing table")
         self.connector.prepare_table(
             full_table_name=self.full_table_name,
             schema=self.schema,
@@ -139,16 +141,19 @@ class mssqlSink(SQLSink):
             as_temp_table=False,
         )
         # Create a temp table (Creates from the table above)
+        self.logger.info("Creating temp table")
         self.connector.create_temp_table_from_table(
             from_table_name=self.full_table_name
         )
         # Insert into temp table
+        self.logger.info("Inserting into temp table")
         self.bulk_insert_records(
             full_table_name=f"{self.full_table_name}_tmp",
             schema=self.schema,
             records=context["records"],
         )
         # Merge data from Temp table to main table
+        self.logger.info("Merging data from temp table to main table")
         self.merge_upsert_from_table(
             from_table_name=f"{self.full_table_name}_tmp",
             to_table_name=f"{self.full_table_name}",
