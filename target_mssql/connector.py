@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from singer_sdk.sinks import SQLConnector, SQLSink
+from sqlalchemy.dialects import mssql
 from typing import Any, Generic, Mapping, TypeVar, Union, cast
 from singer_sdk.helpers._typing import (
     get_datelike_property_type
@@ -126,6 +127,76 @@ class mssqlConnector(SQLConnector):
         _ = sqlalchemy.Table(full_table_name, meta, *columns)
         meta.create_all(self._engine)
 
+    def merge_sql_types(
+        self, sql_types: list[sqlalchemy.types.TypeEngine]
+    ) -> sqlalchemy.types.TypeEngine:
+        """Return a compatible SQL type for the selected type list.
+        Args:
+            sql_types: List of SQL types.
+        Returns:
+            A SQL type that is compatible with the input types.
+        Raises:
+            ValueError: If sql_types argument has zero members.
+        """
+        if not sql_types:
+            raise ValueError("Expected at least one member in `sql_types` argument.")
+
+        if len(sql_types) == 1:
+            return sql_types[0]
+
+        # Gathering Type to match variables
+        # sent in _adapt_column_type
+        current_type = sql_types[0]
+        # sql_type = sql_types[1]
+
+        # Getting the length of each type
+        # current_type_len: int = getattr(sql_types[0], "length", 0)
+        sql_type_len: int = getattr(sql_types[1], "length", 0)
+        if sql_type_len is None:
+            sql_type_len = 0
+
+        # Convert the two types given into a sorted list
+        # containing the best conversion classes
+        sql_types = self._sort_types(sql_types)
+
+        # If greater than two evaluate the first pair then on down the line
+        if len(sql_types) > 2:
+            return self.merge_sql_types(
+                [self.merge_sql_types([sql_types[0], sql_types[1]])] + sql_types[2:]
+            )
+
+        assert len(sql_types) == 2
+        # Get the generic type class
+        for opt in sql_types:
+            # Get the length
+            opt_len: int = getattr(opt, "length", 0)
+            generic_type = type(opt.as_generic())
+
+            if isinstance(generic_type, type):
+                if issubclass(
+                    generic_type,
+                    (sqlalchemy.types.String, sqlalchemy.types.Unicode),
+                ):
+                    # If length None or 0 then is varchar max ?
+                    if (opt_len is None) or (opt_len == 0) or (opt_len >= current_type.length):
+                        return opt
+                elif isinstance(
+                    generic_type,
+                    (sqlalchemy.types.String, sqlalchemy.types.Unicode),
+                ):
+                    # If length None or 0 then is varchar max ?
+                    if (opt_len is None) or (opt_len == 0) or (opt_len >= current_type.length):
+                        return opt
+                # If best conversion class is equal to current type
+                # return the best conversion class
+                elif str(opt) == str(current_type):
+                    return opt
+
+        raise ValueError(
+            f"Unable to merge sql types: {', '.join([str(t) for t in sql_types])}"
+        )
+
+
     def _adapt_column_type(
         self,
         full_table_name: str,
@@ -154,7 +225,7 @@ class mssqlConnector(SQLConnector):
         # calling merge_sql_types for assistnace
         compatible_sql_type = self.merge_sql_types([current_type, sql_type])
 
-        if str(compatible_sql_type) == str(current_type):
+        if str(compatible_sql_type).split(' ')[0] == str(current_type).split(' ')[0]:
             # Nothing to do
             return
 
@@ -266,39 +337,30 @@ class mssqlConnector(SQLConnector):
                     return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.DATE())
 
             maxlength = jsonschema_type.get("maxLength")
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(maxlength, collation='SQL_Latin1_General_CP1_CI_AS'))
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR(maxlength))
 
         if self._jsonschema_type_check(jsonschema_type, ("integer",)):
             return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.INTEGER())
         if self._jsonschema_type_check(jsonschema_type, ("number",)):
             return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NUMERIC(22, 16))
         if self._jsonschema_type_check(jsonschema_type, ("boolean",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.BOOLEAN())
+            return cast(sqlalchemy.types.TypeEngine, mssql.VARCHAR(1))
 
         if self._jsonschema_type_check(jsonschema_type, ("object",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR())
 
         if self._jsonschema_type_check(jsonschema_type, ("array",)):
-            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(245,  collation='SQL_Latin1_General_CP1_CI_AS'))
+            return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR())
 
-        return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.NVARCHAR(255, collation='SQL_Latin1_General_CP1_CI_AS'))
+        return cast(sqlalchemy.types.TypeEngine, sqlalchemy.types.VARCHAR())
 
 
     def create_temp_table_from_table(self, from_table_name):
         """Temp table from another table."""
 
-        # ddl = sqlalchemy.DDL(
-        #     """
-        #     SELECT TOP 0 *
-        #     into #%(from_table_name)s
-        #     FROM %(from_table_name)s
-        #     """,
-        #     {"from_table_name": from_table_name},
-        # )
-
         ddl = f"""
             SELECT TOP 0 *
-            into {from_table_name}_tmp
+            into #{from_table_name}
             FROM {from_table_name}
         """
 
