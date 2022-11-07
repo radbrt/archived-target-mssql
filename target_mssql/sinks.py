@@ -74,32 +74,20 @@ class mssqlSink(SQLSink):
 
         columns = self.column_representation(schema)
 
-        primary_key_present = True
-
-        # meta = MetaData()
-        # table = Table( full_table_name, meta, autoload=True, autoload_with=self.connector.connection.engine)
-        # primary_key_list = [pk_column.name for pk_column in table.primary_key.columns.values()]
-        # for primary_key in primary_key_list:
-        #     if primary_key in records[0]:
-        #         primary_key_present = True
-
+        # temporary fix to ensure missing properties are added
         insert_records = []
         for record in records:
-            self.logger.info("Inserting record: %s", record)
             insert_record = {}
             for column in columns:
-                self.logger.info("processing column: %s", column)
                 insert_record[column.name] = record.get(column.name)
             insert_records.append(insert_record)
 
-        if primary_key_present:
-            self.logger.info("Inserting with primary key, toggling identity")
+        if self.key_properties:
             self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } ON")
 
-        self.logger.info("Finally reached the insert execute stage")
         self.connection.execute(insert_sql, insert_records)
 
-        if primary_key_present:
+        if self.key_properties:
             self.connection.execute(f"SET IDENTITY_INSERT { full_table_name } OFF")
 
 
@@ -107,6 +95,8 @@ class mssqlSink(SQLSink):
             return len(records)  # If list, we can quickly return record count.
 
         return None  # Unknown record count.
+
+
 
     def column_representation(
         self,
@@ -133,34 +123,41 @@ class mssqlSink(SQLSink):
         """
         # First we need to be sure the main table is already created
 
-        self.logger.info("Preparing table")
-        self.connector.prepare_table(
-            full_table_name=self.full_table_name,
-            schema=self.schema,
-            primary_keys=self.key_properties,
-            as_temp_table=False,
-        )
-        # Create a temp table (Creates from the table above)
-        self.logger.info("Creating temp table")
-        self.connector.create_temp_table_from_table(
-            from_table_name=self.full_table_name
-        )
-        # Insert into temp table
-        self.logger.info("Inserting into temp table")
-        self.bulk_insert_records(
-            full_table_name=f"{self.full_table_name}_tmp",
-            schema=self.schema,
-            records=context["records"],
-        )
-        # Merge data from Temp table to main table
-        self.logger.info("Merging data from temp table to main table")
-        self.merge_upsert_from_table(
-            from_table_name=f"{self.full_table_name}_tmp",
-            to_table_name=f"{self.full_table_name}",
-            schema=self.schema,
-            join_keys=self.key_properties,
-        )
-        # self.connector.truncate_table(self.temp_table_name)
+        if self.key_properties:
+            self.logger.info("Preparing table")
+            self.connector.prepare_table(
+                full_table_name=self.full_table_name,
+                schema=self.schema,
+                primary_keys=self.key_properties,
+                as_temp_table=False,
+            )
+            # Create a temp table (Creates from the table above)
+            self.logger.info("Creating temp table")
+            self.connector.create_temp_table_from_table(
+                from_table_name=self.full_table_name
+            )
+            # Insert into temp table
+            self.logger.info("Inserting into temp table")
+            self.bulk_insert_records(
+                full_table_name=f"#{self.full_table_name}",
+                schema=self.schema,
+                records=context["records"],
+            )
+            # Merge data from Temp table to main table
+            self.logger.info("Merging data from temp table to main table")
+            self.merge_upsert_from_table(
+                from_table_name=f"#{self.full_table_name}",
+                to_table_name=f"{self.full_table_name}",
+                schema=self.schema,
+                join_keys=self.key_properties,
+            )
+
+        else:
+            self.bulk_insert_records(
+                full_table_name=self.full_table_name,
+                schema=self.schema,
+                records=context["records"],
+            )
 
 
     def merge_upsert_from_table(
@@ -183,8 +180,6 @@ class mssqlSink(SQLSink):
         # TODO think about sql injeciton,
         # issue here https://github.com/MeltanoLabs/target-postgres/issues/22
 
-
-        # INSERT
         join_condition = " and ".join(
             [f"temp.{key} = target.{key}" for key in join_keys]
         )
@@ -201,9 +196,6 @@ class mssqlSink(SQLSink):
                 VALUES ({", ".join([f"temp.{key}" for key in schema["properties"].keys()])});
         """
 
-        self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } ON")
         self.connection.execute(merge_sql)
-        self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } OFF")
-        # self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } OFF")
-        self.connection.execute(f"DROP TABLE {from_table_name}")
+        
         self.connection.execute(f"COMMIT")
