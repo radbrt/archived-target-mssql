@@ -124,7 +124,7 @@ class mssqlSink(SQLSink):
         # First we need to be sure the main table is already created
 
         if self.key_properties:
-            self.logger.info("Preparing table")
+            self.logger.info(f"Preparing table {self.full_table_name}")
             self.connector.prepare_table(
                 full_table_name=self.full_table_name,
                 schema=self.schema,
@@ -132,7 +132,7 @@ class mssqlSink(SQLSink):
                 as_temp_table=False,
             )
             # Create a temp table (Creates from the table above)
-            self.logger.info("Creating temp table")
+            self.logger.info(f"Creating temp table {self.full_table_name}")
             self.connector.create_temp_table_from_table(
                 from_table_name=self.full_table_name
             )
@@ -144,7 +144,7 @@ class mssqlSink(SQLSink):
                 records=context["records"],
             )
             # Merge data from Temp table to main table
-            self.logger.info("Merging data from temp table to main table")
+            self.logger.info(f"Merging data from temp table to {self.full_table_name}")
             self.merge_upsert_from_table(
                 from_table_name=f"#{self.full_table_name}",
                 to_table_name=f"{self.full_table_name}",
@@ -183,7 +183,7 @@ class mssqlSink(SQLSink):
         join_condition = " and ".join(
             [f"temp.{key} = target.{key}" for key in join_keys]
         )
-        # self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } ON")
+
         merge_sql = f"""
             MERGE INTO {to_table_name} AS target
             USING {from_table_name} AS temp
@@ -196,6 +196,12 @@ class mssqlSink(SQLSink):
                 VALUES ({", ".join([f"temp.{key}" for key in schema["properties"].keys()])});
         """
 
+        if self.key_properties:
+            self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } ON")
+
         self.connection.execute(merge_sql)
         
+        if self.key_properties:
+            self.connection.execute(f"SET IDENTITY_INSERT { to_table_name } OFF")
+
         self.connection.execute(f"COMMIT")
