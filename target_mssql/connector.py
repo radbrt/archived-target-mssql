@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from singer_sdk.sinks import SQLSink
-from singer_sdk.connectors.sql import SQLConnector
+from singer_sdk.sinks import SQLSink, SQLConnector
 from sqlalchemy.dialects import mssql
 from typing import Any, Generic, Mapping, TypeVar, Union, cast
 from singer_sdk.helpers._typing import (
