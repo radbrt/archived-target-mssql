@@ -40,8 +40,6 @@ jobs:
           SA_PASSWORD: P@55w0rd
           ACCEPT_EULA: "Y"
           MSSQL_PID: "Express"
-        ports:
-          - 1433:1433
     strategy:
       matrix:
         # python-version: ["3.8", "3.9", "3.10"]
