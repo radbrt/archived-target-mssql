@@ -54,6 +54,20 @@ class mssqlSink(SQLSink):
         # Schema name not detected.
         return None
 
+    def preprocess_record(self, record: dict, context: dict) -> dict:
+        """Process incoming record and return a modified result.
+        Args:
+            record: Individual record in the stream.
+            context: Stream partition or context dictionary.
+        Returns:
+            A new, processed record.
+        """
+        keys = record.keys()
+        for key in keys:
+            if type(record[key]) is list:
+                record[key] = str(record[key])
+
+        return record
 
     def bulk_insert_records(
         self,
