@@ -11,15 +11,6 @@ on:
 jobs:
   linting:
     runs-on: ubuntu-latest
-    services:
-      mssql:
-        image: mcr.microsoft.com/mssql/server:2019-latest
-        env:
-          SA_PASSWORD: P@55w0rd
-          ACCEPT_EULA: "Y"
-          MSSQL_PID: "Express"
-        ports:
-          - 1433:1433
     strategy:
       matrix:
         # Only lint using the primary version used for dev
@@ -42,9 +33,19 @@ jobs:
         poetry run tox -e lint
   pytest:
     runs-on: ubuntu-latest
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        env:
+          SA_PASSWORD: P@55w0rd
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: "Express"
+        ports:
+          - 1433:1433
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        # python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.10"]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python '${{ matrix.python-version }}'
