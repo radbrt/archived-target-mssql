@@ -35,8 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
-        mssql-version: ["2017-latest", "2019-latest", "2022-latest"]
+        python-version: ["3.8", "3.9", "3.10"]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python '${{ matrix.python-version }}'
@@ -57,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mssql:
-        image: mcr.microsoft.com/mssql/server:${{ matrix.mssql-version }}
+        image: mcr.microsoft.com/mssql/server:2019-latest
         env:
           SA_PASSWORD: P@55w0rd
           ACCEPT_EULA: "Y"
