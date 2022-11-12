@@ -62,7 +62,7 @@ class mssqlConnector(SQLConnector):
         """
         #return f"mssql+pyodbc://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}?driver=ODBC+Driver+17+for+SQL+Server"
 
-        connection_url = sqlalchemy.engine.url.URL(
+        connection_url = sqlalchemy.engine.url.URL.create(
             drivername="mssql+pymssql",
             username=config["user"],
             password=config["password"],
