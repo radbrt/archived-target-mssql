@@ -17,13 +17,13 @@ from target_mssql.tests.samples.sample_tap_countries.countries_tap import (
 @pytest.fixture()
 def mssql_config():
     return {
-        "sqlalchemy_url": "mssql+pymssql://sa:p@55w0rd@localhost:1433/master", 
-        "schema": "dbo", 
-        "user": "sa", 
-        "password": "P@55w0rd", 
-        "host": "localhost", 
-        "port": "1433", 
-        "database": "master"
+        "sqlalchemy_url": "mssql+pymssql://sa:p@55w0rd@localhost:1433/master",
+        "schema": "dbo",
+        "user": "sa",
+        "password": "P@55w0rd",
+        "host": "localhost",
+        "port": "1433",
+        "database": "master",
     }
 
 
