@@ -40,11 +40,6 @@ jobs:
           SA_PASSWORD: P@55w0rd
           ACCEPT_EULA: "Y"
           MSSQL_PID: "Express"
-        options: >-
-          --health-cmd sqlcmd -S localhost -U SA -P 'P@55w0rd' -Q 'select 1'
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 1433:1433
     strategy:
